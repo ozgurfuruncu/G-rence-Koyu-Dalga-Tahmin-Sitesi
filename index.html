@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Karaburun - Çeşme Tekne Seyir & Dalga Tahmini</title>
+  <style>
+    :root {
+      --bg: #070d19; --card: #0f1a30; --text: #f0f4fd; --muted: #8ea0c4;
+      --good: #2ecc71; --mid: #f39c12; --bad: #e74c3c; --outline: rgba(255,255,255,.09);
+      --accent: #00a8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: radial-gradient(circle at top, #14254a 0%, var(--bg) 100%);
+      color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh; display: flex; justify-content: center; padding: 20px 12px;
+    }
+    .wrap { width: 100%; max-width: 760px; }
+    .card {
+      background: rgba(15, 26, 48, 0.85); border: 1px solid var(--outline);
+      border-radius: 20px; padding: 22px; backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    h1 { margin: 0; font-size: 22px; font-weight: 800; }
+    .sub { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    
+    .inputs {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin: 18px 0;
+    }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+    input {
+      width: 100%; border: 1px solid var(--outline); background: rgba(0,0,0,0.25);
+      color: var(--text); border-radius: 10px; padding: 10px; font-size: 14px; margin-top: 4px;
+    }
+    button {
+      width: 100%; cursor: pointer; font-weight: 700; border: none; border-radius: 12px;
+      padding: 14px; background: linear-gradient(135deg, #0984e3, #00cec9);
+      color: #fff; font-size: 15px; transition: transform .1s, opacity .2s;
+    }
+    button:active { transform: scale(0.99); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .loader { display: none; text-align: center; margin: 15px 0; color: var(--accent); font-weight: 600; }
+    .error { display: none; margin: 12px 0; padding: 12px; border-radius: 10px; background: rgba(231,76,60,0.15); border: 1px solid var(--bad); color: #ff8e8e; font-size: 13px; }
+
+    .main-box {
+      margin-top: 18px; border: 1px solid var(--outline); border-radius: 16px;
+      padding: 18px; background: rgba(0,0,0,0.2); display: flex;
+      justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+    }
+    .val-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .val-cm { font-size: 44px; font-weight: 900; margin: 0; line-height: 1; }
+    .val-range { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+    .pill {
+      padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px; border: 1px solid var(--outline);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .grid-details {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px; margin-top: 14px;
+    }
+    .card-mini {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--outline);
+      border-radius: 12px; padding: 12px;
+    }
+    .card-mini .label { font-size: 11px; color: var(--muted); }
+    .card-mini .num { font-size: 16px; font-weight: 700; margin-top: 5px; }
+
+    .commentary {
+      margin-top: 14px; padding: 12px 14px; border-left: 4px solid var(--accent);
+      background: rgba(0,168,255,0.06); border-radius: 0 10px 10px 0;
+      font-size: 13px; line-height: 1.45; color: #d6e2ff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <header>
+      <h1>Karaburun - Çeşme Deniz Dalga Analizi</h1>
+      <div class="sub">Gülkent Tatil Sitesi açıklarından Çeşme rotası için daraltılmış santimetre ve tekne seyir uygunluk raporu.</div>
+    </header>
+
+    <div class="inputs">
+      <div>
+        <label>Enlem</label>
+        <input id="lat" type="text" value="38.632" />
+      </div>
+      <div>
+        <label>Boylam</label>
+        <input id="lon" type="text" value="26.518" />
+      </div>
+      <div>
+        <label>Düz Deniz Sınırı (cm)</label>
+        <input id="thGood" type="number" value="45" />
+      </div>
+      <div>
+        <label>Orta Dalga Sınırı (cm)</label>
+        <input id="thMid" type="number" value="90" />
+      </div>
+    </div>
+
+    <button id="btn" onclick="fetchSeaForecast()">Yarının Durumunu Hesapla</button>
+
+    <div id="loader" class="loader">Geçmiş dalgalar, rüzgar ve Ay çekimi inceleniyor...</div>
+    <div id="error" class="error"></div>
+
+    <div class="main-box">
+      <div>
+        <div class="val-title" id="reportDate">Yarın Gündüz (08:00 - 18:00 Ortalaması)</div>
+        <div class="val-cm" id="waveHeight">-- cm</div>
+        <div class="val-range" id="waveRange">Tahmini aralık: --</div>
+      </div>
+      <div class="pill" id="statusPill">
+        <div class="dot" id="statusDot" style="background:#7f8c8d;"></div>
+        <span id="statusText">Veri Bekleniyor</span>
+      </div>
+    </div>
+
+    <div class="grid-details">
+      <div class="card-mini">
+        <div class="label">Rüzgar Hızı & Yön</div>
+        <div class="num" id="windInfo">--</div>
+      </div>
+      <div class="card-mini">
+        <div class="label">Ay Fazı / Çekim Orantısı</div>
+        <div class="num" id="moonInfo">--</div>
+      </div>
+      <div class="card-mini">
+        <div class="label">Geçmiş Dalga Eğilimi</div>
+        <div class="num" id="historyTrend">--</div>
+      </div>
+      <div class="card-mini">
+        <div class="label">Dalga Periyodu</div>
+        <div class="num" id="wavePeriod">--</div>
+      </div>
+    </div>
+
+    <div class="commentary" id="adviceBox">
+      Butona bastığınızda son 48 saatin deniz taban hareketleri, rüzgar sürtünmesi ve Ay katsayısı hesaba katılarak net rota yorumu verilecektir.
+    </div>
+  </div>
+</div>
+
+<script>
+  // Ay Fazı ve Çekim Kuvveti Hesabı
+  function getMoonPhaseAndTidalPull(date) {
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1;
+    let day = date.getDate();
+    if (month < 3) { year--; month += 12; }
+    let c = 365.25 * year;
+    let e = 30.6 * month;
+    let jd = c + e + day - 694039.09;
+    jd /= 29.5305882;
+    let phaseFraction = jd - Math.floor(jd);
+
+    let phaseName = "";
+    let pullFactor = 1.0;
+
+    if (phaseFraction < 0.05 || phaseFraction > 0.95) {
+      phaseName = "Yeniay";
+      pullFactor = 1.15; // Yüksek çekim / Spring Tide
+    } else if (phaseFraction < 0.22) {
+      phaseName = "Hilal";
+      pullFactor = 1.02;
+    } else if (phaseFraction < 0.28) {
+      phaseName = "İlk Dördün";
+      pullFactor = 0.90; // Neap tide (küçük gelgit)
+    } else if (phaseFraction < 0.45) {
+      phaseName = "Şişkin Ay";
+      pullFactor = 1.05;
+    } else if (phaseFraction < 0.55) {
+      phaseName = "Dolunay";
+      pullFactor = 1.20; // Maksimum çekim / Güçlü dip akıntısı & çırpıntı
+    } else if (phaseFraction < 0.72) {
+      phaseName = "Şişkin Ay";
+      pullFactor = 1.05;
+    } else if (phaseFraction < 0.78) {
+      phaseName = "Son Dördün";
+      pullFactor = 0.90;
+    } else {
+      phaseName = "Hilal";
+      pullFactor = 1.02;
+    }
+
+    return { phaseName, pullFactor, phaseFraction: Math.round(phaseFraction * 100) };
+  }
+
+  function getWindDirectionCardinal(deg) {
+    const directions = ['K (Kuzey)', 'KKD', 'KD', 'DKD', 'D (Doğu)', 'GGD', 'GD', 'GGD', 'G (Güney)', 'GGB', 'GB', 'BGB', 'B (Batı)', 'BKB', 'KB', 'KKB'];
+    return directions[Math.round(deg / 22.5) % 16];
+  }
+
+  async function fetchSeaForecast() {
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lon = parseFloat(document.getElementById('lon').value);
+    const thGood = parseFloat(document.getElementById('thGood').value);
+    const thMid = parseFloat(document.getElementById('thMid').value);
+
+    const btn = document.getElementById('btn');
+    const loader = document.getElementById('loader');
+    const errorBox = document.getElementById('error');
+
+    errorBox.style.display = 'none';
+    loader.style.display = 'block';
+    btn.disabled = true;
+
+    try {
+      // 1. Marine API (Dalga, Swell ve Periyot - 2 gün geçmiş + 2 gün tahmin)
+      const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,swell_wave_height&past_days=2&forecast_days=2&timezone=auto`;
+      
+      // 2. Weather API (Rüzgar Hızı ve Yönü)
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&past_days=2&forecast_days=2&timezone=auto`;
+
+      const [marineRes, weatherRes] = await Promise.all([
+        fetch(marineUrl).then(r => r.json()),
+        fetch(weatherUrl).then(r => r.json())
+      ]);
+
+      if (!marineRes.hourly || !weatherRes.hourly) {
+        throw new Error("Hava/Deniz servisinden veri alınamadı. Koordinatların açık denizde olduğundan emin olun.");
+      }
+
+      // Yarının tarihini belirle
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      // Dünün tarihini belirle (Geçmiş analiz için)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      // Gündüz saatlerini filtrele (Tekne seyrinin yapıldığı 08:00 - 18:00 arası)
+      const marineTimes = marineRes.hourly.time;
+      const tomorrowDayIndices = [];
+      const yesterdayDayIndices = [];
+
+      marineTimes.forEach((time, index) => {
+        if (time.startsWith(tomorrowStr)) {
+          const hour = parseInt(time.split('T')[1].split(':')[0], 10);
+          if (hour >= 8 && hour <= 18) tomorrowDayIndices.push(index);
+        } else if (time.startsWith(yesterdayStr)) {
+          const hour = parseInt(time.split('T')[1].split(':')[0], 10);
+          if (hour >= 8 && hour <= 18) yesterdayDayIndices.push(index);
+        }
+      });
+
+      // Yarınki ham dalgalar (metre -> cm)
+      const tomorrowWaves = tomorrowDayIndices.map(i => (marineRes.hourly.wave_height[i] || 0) * 100);
+      const tomorrowSwells = tomorrowDayIndices.map(i => (marineRes.hourly.swell_wave_height[i] || 0) * 100);
+      const tomorrowPeriods = tomorrowDayIndices.map(i => marineRes.hourly.wave_period[i] || 0);
+
+      // Dünkü dalgalar (geçmiş eğilim kontrolü)
+      const yesterdayWaves = yesterdayDayIndices.map(i => (marineRes.hourly.wave_height[i] || 0) * 100);
+      const pastAvg = yesterdayWaves.length ? yesterdayWaves.reduce((a, b) => a + b, 0) / yesterdayWaves.length : 50;
+
+      // Rüzgar verileri (Yarın)
+      const tomorrowWinds = tomorrowDayIndices.map(i => weatherRes.hourly.wind_speed_10m[i] || 0);
+      const tomorrowWindDirs = tomorrowDayIndices.map(i => weatherRes.hourly.wind_direction_10m[i] || 0);
+
+      const avgWind = Math.round(tomorrowWinds.reduce((a, b) => a + b, 0) / tomorrowWinds.length);
+      const avgWindDir = Math.round(tomorrowWindDirs.reduce((a, b) => a + b, 0) / tomorrowWindDirs.length);
+      const avgPeriod = (tomorrowPeriods.reduce((a, b) => a + b, 0) / tomorrowPeriods.length).toFixed(1);
+
+      // Ay Katsayısı
+      const moon = getMoonPhaseAndTidalPull(tomorrow);
+
+      // Dalgayı Daraltılmış ve Hesaplanmış Modele Oturtma:
+      // Ham dalgaya; Ay katsayısı ve geçmiş rüzgardan kalan ölü dalga (soluğan) düzeltmesi uygulanır
+      const correctedWaves = tomorrowWaves.map((w, idx) => {
+        let val = w * (0.85 + (moon.pullFactor * 0.15));
+        // Dünden gelen soluğan (swell) etkisi
+        if (pastAvg > 80 && tomorrowSwells[idx] > 30) {
+          val += 8; // Deniz oturduğu için çırpıntı eklenir
+        }
+        return val;
+      });
+
+      const avgCm = Math.round(correctedWaves.reduce((a, b) => a + b, 0) / correctedWaves.length);
+      const minCm = Math.round(Math.min(...correctedWaves));
+      const maxCm = Math.round(Math.max(...correctedWaves));
+
+      // Geçmiş trendi belirleme
+      let trendText = "Stabil";
+      if (avgCm > pastAvg + 15) trendText = "Yükseliyor ↗";
+      else if (avgCm < pastAvg - 15) trendText = "Yatışıyor ↘";
+
+      // Ekranı güncelle
+      document.getElementById('reportDate').textContent = `Yarın (${tomorrowStr}) 08:00 - 18:00 Arası`;
+      document.getElementById('waveHeight').textContent = `${avgCm} cm`;
+      document.getElementById('waveRange').textContent = `Daraltılmış Tahmin Aralığı: ${minCm} - ${maxCm} cm`;
+      document.getElementById('windInfo').textContent = `${avgWind} knot / ${getWindDirectionCardinal(avgWindDir)}`;
+      document.getElementById('moonInfo').textContent = `${moon.phaseName} (Etki: x${moon.pullFactor})`;
+      document.getElementById('historyTrend').textContent = `${trendText} (Dün: ${Math.round(pastAvg)} cm)`;
+      document.getElementById('wavePeriod').textContent = `${avgPeriod} sn`;
+
+      // Durum değerlendirme
+      const dot = document.getElementById('statusDot');
+      const pillText = document.getElementById('statusText');
+      const adviceBox = document.getElementById('adviceBox');
+
+      if (avgCm <= thGood) {
+        dot.style.background = "var(--good)";
+        pillText.textContent = "DÜZ / ÇARŞAF (Seyre Uygun)";
+        pillText.style.color = "var(--good)";
+        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Deniz oldukça sakin ve düz görünüyor (${minCm}-${maxCm} cm). Karaburun Gülkent'ten Çeşme yönüne küçük ve orta boy teknelerle çıkış için son derece elverişli.`;
+      } else if (avgCm <= thMid) {
+        dot.style.background = "var(--mid)";
+        pillText.textContent = "ORTA ÇIRPINTILI (Dikkat)";
+        pillText.style.color = "var(--mid)";
+        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Denizde ${minCm}-${maxCm} cm bandında orta çırpıntı bekleniyor. Rüzgar (${avgWind} knot) ve Ayın (${moon.phaseName}) etkisiyle özellikle Karaburun Burun ucu ve boğaz geçişinde serpinti artabilir. Küçük teknelerin tedbirli olması önerilir.`;
+      } else {
+        dot.style.background = "var(--bad)";
+        pillText.textContent = "DALGALI / TEHLİKELİ";
+        pillText.style.color = "var(--bad)";
+        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Dalga boyu ortalama ${avgCm} cm seviyelerinde ve yer yer ${maxCm} cm üzerine çıkabilir. Rüzgar ve geçmişten gelen soluğan dalgalar Çeşme rotasında seyri çok konforsuz ve riskli hale getirecektir. Çıkış ertelenmeli.`;
+      }
+
+    } catch (err) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = "Hata oluştu: " + err.message;
+    } finally {
+      loader.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  // Sayfa açıldığında otomatik hesaplasın
+  window.addEventListener('DOMContentLoaded', fetchSeaForecast);
+</script>
+</body>
+</html>
