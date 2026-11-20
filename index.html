@@ -1,340 +1,123 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Karaburun - Çeşme Tekne Seyir & Dalga Tahmini</title>
-  <style>
-    :root {
-      --bg: #070d19; --card: #0f1a30; --text: #f0f4fd; --muted: #8ea0c4;
-      --good: #2ecc71; --mid: #f39c12; --bad: #e74c3c; --outline: rgba(255,255,255,.09);
-      --accent: #00a8ff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: radial-gradient(circle at top, #14254a 0%, var(--bg) 100%);
-      color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh; display: flex; justify-content: center; padding: 20px 12px;
-    }
-    .wrap { width: 100%; max-width: 760px; }
-    .card {
-      background: rgba(15, 26, 48, 0.85); border: 1px solid var(--outline);
-      border-radius: 20px; padding: 22px; backdrop-filter: blur(12px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-    h1 { margin: 0; font-size: 22px; font-weight: 800; }
-    .sub { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.4; }
-    
-    .inputs {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px; margin: 18px 0;
-    }
-    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
-    input {
-      width: 100%; border: 1px solid var(--outline); background: rgba(0,0,0,0.25);
-      color: var(--text); border-radius: 10px; padding: 10px; font-size: 14px; margin-top: 4px;
-    }
-    button {
-      width: 100%; cursor: pointer; font-weight: 700; border: none; border-radius: 12px;
-      padding: 14px; background: linear-gradient(135deg, #0984e3, #00cec9);
-      color: #fff; font-size: 15px; transition: transform .1s, opacity .2s;
-    }
-    button:active { transform: scale(0.99); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .loader { display: none; text-align: center; margin: 15px 0; color: var(--accent); font-weight: 600; }
-    .error { display: none; margin: 12px 0; padding: 12px; border-radius: 10px; background: rgba(231,76,60,0.15); border: 1px solid var(--bad); color: #ff8e8e; font-size: 13px; }
-
-    .main-box {
-      margin-top: 18px; border: 1px solid var(--outline); border-radius: 16px;
-      padding: 18px; background: rgba(0,0,0,0.2); display: flex;
-      justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
-    }
-    .val-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .val-cm { font-size: 44px; font-weight: 900; margin: 0; line-height: 1; }
-    .val-range { font-size: 14px; color: var(--muted); margin-top: 6px; }
-
-    .pill {
-      padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 700;
-      display: flex; align-items: center; gap: 8px; border: 1px solid var(--outline);
-    }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-
-    .grid-details {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px; margin-top: 14px;
-    }
-    .card-mini {
-      background: rgba(255,255,255,0.02); border: 1px solid var(--outline);
-      border-radius: 12px; padding: 12px;
-    }
-    .card-mini .label { font-size: 11px; color: var(--muted); }
-    .card-mini .num { font-size: 16px; font-weight: 700; margin-top: 5px; }
-
-    .commentary {
-      margin-top: 14px; padding: 12px 14px; border-left: 4px solid var(--accent);
-      background: rgba(0,168,255,0.06); border-radius: 0 10px 10px 0;
-      font-size: 13px; line-height: 1.45; color: #d6e2ff;
-    }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#103b43">
+  <meta name="description" content="Ege kıyıları için 7 günlük dalga ve rüzgâr tahmini. Saatleri karşılaştırın, kendi eşiklerinizi belirleyin ve denizde geçireceğiniz günü planlayın.">
+  <title>Dalga — Denize çıkmadan önce.</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="bathymetry.css">
+  <script src="forecast-core.js" defer></script>
+  <script src="vendor/leaflet/leaflet.js" defer></script>
+  <script src="bathymetry-core.js" defer></script>
+  <script src="bathymetry-map.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-
-<div class="wrap">
-  <div class="card">
-    <header>
-      <h1>Karaburun - Çeşme Deniz Dalga Analizi</h1>
-      <div class="sub">Gülkent Tatil Sitesi açıklarından Çeşme rotası için daraltılmış santimetre ve tekne seyir uygunluk raporu.</div>
-    </header>
-
-    <div class="inputs">
-      <div>
-        <label>Enlem</label>
-        <input id="lat" type="text" value="38.632" />
-      </div>
-      <div>
-        <label>Boylam</label>
-        <input id="lon" type="text" value="26.518" />
-      </div>
-      <div>
-        <label>Düz Deniz Sınırı (cm)</label>
-        <input id="thGood" type="number" value="45" />
-      </div>
-      <div>
-        <label>Orta Dalga Sınırı (cm)</label>
-        <input id="thMid" type="number" value="90" />
-      </div>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 9c3 0 3-4 6-4s3 4 6 4 3-4 6-4M2 15c3 0 3-4 6-4s3 4 6 4 3-4 6-4M2 21c3 0 3-4 6-4s3 4 6 4 3-4 6-4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h5a3 3 0 1 1-3 3"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16 8-3 5-5 3 3-5 5-3Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6.1 6a8 8 0 0 1 13.4 3M4.5 15A8 8 0 0 0 18 18"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol>
+    <symbol id="i-boat" viewBox="0 0 24 24"><path d="M12 3v12M10 5 4 13h6m4-7 5 7h-5M3 17h18l-3 4H7l-4-4Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/></symbol>
+  </svg>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="#" aria-label="Dalga ana sayfa"><svg><use href="#i-wave"/></svg>dalga<span class="brand-dot">.</span></a>
+    <nav aria-label="Ana menü"><a class="nav-active" href="#tahmin">Deniz tahmini</a><a href="#derinlik">Derinlikler</a><a href="#planla">Seyir planla</a><a href="#rehber">Deniz rehberi</a></nav>
+    <div class="header-end"><span class="region-label">EGE'YE BİR BAKIŞ</span><button class="icon-button" id="settingsButton" aria-label="Tahmin ayarlarını aç"><svg><use href="#i-settings"/></svg></button></div>
+  </div></header>
+  <main class="page" id="tahmin">
+    <div class="page-intro"><div><p class="eyebrow">ROTANIN İLK DURAĞI</p><h1>Denize çıkmadan önce.</h1><p>Dalganın ritmini öğren. Denizdeki zamanını daha iyi planla.</p></div><div class="today-stamp"><svg><use href="#i-sun"/></svg><span id="todayDate"></span></div></div>
+    <section class="location-bar" aria-label="Konum ve aktivite seçimi">
+      <div class="place-control"><svg><use href="#i-pin"/></svg><div><label for="placeSelect">TAHMİN NOKTASI</label><select id="placeSelect"><option value="gulkent">Gülkent açıkları, Karaburun</option><option value="cesme">Çeşme açıkları</option><option value="alacati">Alaçatı açıkları</option><option value="foca">Foça açıkları</option><option value="kusadasi">Kuşadası açıkları</option><option value="bodrum">Bodrum açıkları</option><option value="custom">Koordinat ile seç…</option></select></div></div>
+      <button class="icon-button favorite-button" id="favoriteButton" aria-label="Bu noktayı favorilere ekle" aria-pressed="false"><svg><use href="#i-star"/></svg></button><span class="control-divider"></span>
+      <div class="activity-control"><label for="activitySelect">NE PLANLIYORSUN?</label><select id="activitySelect"><option value="boat">Tekne gezisi</option><option value="sail">Yelken</option><option value="paddle">Kano / SUP</option></select></div>
+      <button class="button button-outline location-button" id="geolocateButton"><svg><use href="#i-target"/></svg>Konumum</button>
+      <button class="button button-primary" id="refreshButton"><svg><use href="#i-refresh"/></svg><span>Yenile</span></button>
+    </section>
+    <div class="favorites" id="favorites" aria-label="Favori noktalar"></div>
+    <div class="data-line"><span id="dataStatus" role="status" aria-live="polite">Deniz ve hava tahminleri alınıyor…</span><button id="demoButton" class="text-button">Örnek görünüm</button></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="errorBox" class="error-box" role="alert" hidden><div><strong id="errorTitle">Tahmine ulaşılamadı</strong><p id="errorMessage"></p></div><button class="button button-outline" id="retryButton">Tekrar dene</button></div>
+    <div class="dashboard-grid" id="forecastContent" aria-busy="true">
+      <section class="sea-hero" aria-labelledby="seaHeading">
+        <div class="hero-top"><span class="hero-eyebrow"><svg><use href="#i-wave"/></svg>DENİZİN DURUMU</span><span class="hero-time" id="heroTime">Saatlik model tahmini</span></div>
+        <div class="hero-main"><div><h2 id="seaHeading">Denizden haber bekleniyor</h2><p class="hero-description" id="heroDescription">Bir sonraki güzel günün rotasını birlikte çizelim.</p></div><span class="condition-badge" id="conditionBadge">Veri bekleniyor</span></div>
+        <div class="wave-number"><span id="mainWave">—</span><span class="wave-unit" id="mainWaveUnit">cm</span><span class="wave-caption">Belirgin dalga<br>yüksekliği</span></div>
+        <div class="hero-bottom"><span id="heroRange">Gün içi aralık: —</span><span id="heroTrend">Düne göre: —</span></div>
+        <svg class="ocean-art" viewBox="0 0 900 290" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="oceanFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#75dbbf" stop-opacity=".28"/><stop offset="1" stop-color="#57b7b4" stop-opacity=".04"/></linearGradient><pattern id="oceanLines" width="70" height="45" patternUnits="userSpaceOnUse"><path d="M0 23Q18 4 35 23T70 23" fill="none" stroke="#9cd8c9" stroke-opacity=".055"/></pattern></defs><rect width="900" height="290" fill="url(#oceanLines)"/><path d="M0 225C120 300 212 92 360 163S520 256 640 120 790 125 900 62V290H0Z" fill="url(#oceanFill)"/><path d="M0 225C120 300 212 92 360 163S520 256 640 120 790 125 900 62" fill="none" stroke="#91ddcb" stroke-opacity=".55" stroke-width="1.5"/><path d="M0 260C120 335 212 127 360 198S520 291 640 155 790 160 900 97M0 280C120 355 212 147 360 218S520 311 640 175 790 180 900 117" fill="none" stroke="#91ddcb" stroke-opacity=".14"/></svg>
+      </section>
+      <aside class="window-card panel" aria-labelledby="windowHeading"><div class="section-kicker"><span class="small-icon mint"><svg><use href="#i-clock"/></svg></span><span>SAATİNİ SEÇ</span></div><h2 id="windowHeading">Daha sakin saatler</h2><p class="window-sub" id="windowSubtitle">Seçili günün gündüz saatleri karşılaştırılıyor.</p><div class="best-time" id="bestTime">— <span>/ 3 saat</span></div><div class="window-metrics"><span><svg><use href="#i-wave"/></svg><b id="bestWave">—</b></span><span><svg><use href="#i-wind"/></svg><b id="bestWind">—</b></span></div><div class="window-note" id="windowNote">Dalga, rüzgâr ve hamle birlikte değerlendirilir.</div><button class="text-button" id="showBestButton" disabled>Bu saatleri grafikte göster</button></aside>
+      <section class="metrics-grid" aria-label="Deniz ve hava ayrıntıları">
+        <article class="metric panel"><span class="metric-top">Rüzgâr <svg><use href="#i-wind"/></svg></span><div class="metric-value" id="windValue">— <small>kn</small></div><p id="windDetail">Yön ve hamle bekleniyor</p></article>
+        <article class="metric panel"><span class="metric-top">Dalga periyodu <svg><use href="#i-clock"/></svg></span><div class="metric-value" id="periodValue">— <small>sn</small></div><p id="periodDetail">Dalgalar arası süre</p></article>
+        <article class="metric panel"><span class="metric-top">Dalga yönü <svg><use href="#i-compass"/></svg></span><div class="metric-value direction-value" id="directionValue">—</div><p id="directionDetail">Dalganın geldiği yön</p></article>
+        <article class="metric panel"><span class="metric-top">Hava / deniz <svg><use href="#i-drop"/></svg></span><div class="metric-value" id="temperatureValue">—</div><p id="temperatureDetail">Model sıcaklık tahmini</p></article>
+      </section>
+      <section class="forecast-panel panel" aria-labelledby="forecastHeading">
+        <div class="panel-header"><div><p class="eyebrow">ÖNÜMÜZDEKİ GÜNLER</p><h2 id="forecastHeading">Denizin ritmi</h2></div><button class="icon-button" id="downloadButton" aria-label="Seçili günün saatlik tahminini CSV indir" disabled><svg><use href="#i-download"/></svg></button></div>
+        <p class="forecast-help">Günlük ortalama dalga · Ayrıntı için bir gün seç.</p>
+        <div class="day-tabs" id="dayTabs" role="tablist" aria-label="Tahmin günü"></div>
+        <div class="chart-toolbar"><div class="segmented" role="group" aria-label="Grafik verisi"><button class="active" data-chart="wave" aria-pressed="true">Dalga</button><button data-chart="wind" aria-pressed="false">Rüzgâr</button></div><div class="chart-legend" id="chartLegend"><span></span>Dalga yüksekliği <i></i>Kişisel eşik</div></div>
+        <div class="chart-wrap" id="chartWrap"><div class="empty-chart">Saatlik tahmin grafiği burada görünecek.</div></div>
+        <div class="chart-readout" id="chartReadout" aria-live="polite">Grafikteki bir saate dokunarak ayrıntıları inceleyebilirsin.</div>
+        <div class="hourly-title"><h3>Saat saat bakış</h3><label class="switch-label"><input type="checkbox" id="allHours">Her saati göster</label></div>
+        <div class="table-scroll"><table><caption class="sr-only">Seçili günün saatlik deniz ve hava tahmini</caption><thead><tr><th scope="col">Saat</th><th scope="col">Dalga</th><th scope="col">Periyot</th><th scope="col">Rüzgâr</th><th scope="col">Hamle</th><th scope="col">Eşik düzeyi</th></tr></thead><tbody id="hourlyBody"><tr><td colspan="6" class="empty-cell">Tahmin yükleniyor…</td></tr></tbody></table></div>
+      </section>
+      <aside class="side-stack">
+        <section class="daylight-card panel" aria-labelledby="dayHeading"><div class="panel-header"><h2 id="dayHeading">Günün detayları</h2><svg class="sun-icon"><use href="#i-sun"/></svg></div><div class="sun-arc" aria-hidden="true"><div class="sun-path"></div><span class="sun-orb"></span><span class="horizon"></span></div><div class="sun-times"><div><span>Gün doğumu</span><strong id="sunrise">—</strong></div><div><span>Gün batımı</span><strong id="sunset">—</strong></div></div><div class="detail-row"><span>Gündüz uzunluğu</span><b id="dayLength">—</b></div><div class="detail-row"><span>Yağış olasılığı · en yüksek</span><b id="rainChance">—</b></div><div class="detail-row"><span>UV indeksi · en yüksek</span><b id="uvIndex">—</b></div><div class="detail-row"><span>Görüş · en düşük</span><b id="visibility">—</b></div></section>
+        <section class="insight-card" aria-labelledby="insightHeading"><span class="small-icon"><svg><use href="#i-compass"/></svg></span><p class="eyebrow">KAPTANIN NOT DEFTERİ</p><h2 id="insightHeading">Veriyi bir de böyle oku.</h2><p id="insightText">Sadece dalganın yüksekliğine bakma. Kısa periyot, aynı yükseklikteki dalgayı daha sık hissetmene neden olur.</p><a href="#rehber">Dalga okuma rehberi</a></section>
+      </aside>
     </div>
-
-    <button id="btn" onclick="fetchSeaForecast()">Yarının Durumunu Hesapla</button>
-
-    <div id="loader" class="loader">Geçmiş dalgalar, rüzgar ve Ay çekimi inceleniyor...</div>
-    <div id="error" class="error"></div>
-
-    <div class="main-box">
-      <div>
-        <div class="val-title" id="reportDate">Yarın Gündüz (08:00 - 18:00 Ortalaması)</div>
-        <div class="val-cm" id="waveHeight">-- cm</div>
-        <div class="val-range" id="waveRange">Tahmini aralık: --</div>
+    <section id="derinlik" class="bathymetry-section" aria-labelledby="depthHeading">
+      <div class="section-heading"><div><p class="eyebrow">SUYUN ALTINDAKİ COĞRAFYA</p><h2 id="depthHeading">Neresi sığ, neresi derin?</h2></div><span class="depth-source-tag">EMODnet · Gerçek coğrafi veri</span></div>
+      <p class="depth-intro">Açık tonlar sığlığı, koyu maviler derinleşen alanları gösterir. Haritaya dokun; o noktadaki ızgara ortalamasını incele.</p>
+      <div class="bathymetry-grid panel">
+        <div class="depth-map-column">
+          <div class="depth-toolbar"><span id="depthLocationName">Tahmin konumu</span><button id="depthRecenter" class="button button-outline" type="button"><svg><use href="#i-target"/></svg>Noktama dön</button></div>
+          <div class="depth-map-shell"><div id="depthMap" class="bathymetry-map" aria-label="Deniz derinlik haritası. Taşımak için yön tuşlarını, yakınlaştırmak için artı ve eksi tuşlarını kullan."></div><div id="depthPlaceholder" class="depth-placeholder"><svg><use href="#i-compass"/></svg><h3>Denizin altına bir bak.</h3><p>Gerçek derinlik katmanı, harita görünür olduğunda yüklenir.</p><button id="depthOpen" type="button" class="button button-primary">Derinlik haritasını aç</button></div></div>
+          <div class="depth-map-status"><span id="depthMapStatus" role="status" aria-live="polite">Harita henüz yüklenmedi.</span><button id="depthRetry" class="text-button" type="button" hidden>Yeniden yükle</button></div>
+          <div class="depth-map-options"><label><input id="depthContours" type="checkbox">50 m ve üzeri izobatlar</label><div class="map-marker-key"><span><i class="origin-key"></i>Tahmin noktası</span><span><i class="inspection-key"></i>İncelenen nokta</span><span><i class="model-key"></i>Dalga hücresi</span></div></div>
+          <div class="depth-legend" id="depthLegend" aria-label="Harita derinlik renkleri"></div>
+          <p class="depth-map-caption">Gri alan: kara veya derinlik katmanının kapsamadığı yer. Büyütmek, kaynak ızgarasına yeni ayrıntı eklemez. İzobatlar genelleştirilmiş 50, 100, 200, 500… metre çizgileridir.</p>
+        </div>
+        <aside class="depth-inspector" aria-labelledby="depthPointHeading">
+          <p class="eyebrow" id="depthPointHeading">İNCELEDİĞİN NOKTA</p><p class="depth-coordinates" id="depthPointCoordinates">—</p>
+          <div class="depth-reading"><span id="depthValue">—</span><small id="depthValueUnit">m</small></div>
+          <p class="depth-reading-label">Yaklaşık ızgara ortalaması</p><span class="depth-band" id="depthBand">Veri bekleniyor</span>
+          <p class="depth-point-status" id="depthPointStatus" role="status" aria-live="polite">Harita açılınca seçili konum sorgulanacak.</p>
+          <dl class="depth-facts"><div><dt>Kaynak ızgara</dt><dd id="depthResolution">1/16 yay dakikası</dd></div><div><dt>Düşey referans</dt><dd>LAT · en düşük astronomik gelgit</dd></div><div><dt>Hata aralığı</dt><dd>Servis sayısal hata aralığı vermiyor.</dd></div><div><dt>Ölçüm kaynağı</dt><dd id="depthSourceDetail">Henüz sorgulanmadı.</dd></div><div><dt>Sorgu zamanı · TRT</dt><dd id="depthRetrieved">—</dd></div></dl>
+          <details class="depth-metadata" id="depthMetadata" hidden><summary>Kaynağın özgün metadatası</summary><dl id="depthMetadataFields"></dl></details>
+          <button class="button button-outline" id="depthUsePoint" disabled>Bu noktanın dalga tahminine bak</button>
+          <a class="depth-external" href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank" rel="noopener noreferrer">Kaynağı ve yöntemini incele</a>
+        </aside>
       </div>
-      <div class="pill" id="statusPill">
-        <div class="dot" id="statusDot" style="background:#7f8c8d;"></div>
-        <span id="statusText">Veri Bekleniyor</span>
-      </div>
-    </div>
+      <div class="depth-limit-note"><svg><use href="#i-compass"/></svg><p><strong>Genel deniz tabanı görünümü.</strong> Izgara ortalaması küçük kayalıkları, ani sığlıkları ve liman ayrıntılarını kaçırabilir; o andaki su yüksekliğini göstermez. Seyir ve omurga altı açıklık kararı için güncel resmî deniz haritası ve iskandil gerekir.</p></div>
+    </section>
 
-    <div class="grid-details">
-      <div class="card-mini">
-        <div class="label">Rüzgar Hızı & Yön</div>
-        <div class="num" id="windInfo">--</div>
-      </div>
-      <div class="card-mini">
-        <div class="label">Ay Fazı / Çekim Orantısı</div>
-        <div class="num" id="moonInfo">--</div>
-      </div>
-      <div class="card-mini">
-        <div class="label">Geçmiş Dalga Eğilimi</div>
-        <div class="num" id="historyTrend">--</div>
-      </div>
-      <div class="card-mini">
-        <div class="label">Dalga Periyodu</div>
-        <div class="num" id="wavePeriod">--</div>
-      </div>
-    </div>
+    <section class="accuracy-section panel" aria-labelledby="accuracyHeading"><div class="panel-header"><div><p class="eyebrow">VERİYİ SINIRLARIYLA BİRLİKTE OKU</p><h2 id="accuracyHeading">Tahminin ne kadar yerel?</h2></div><span id="accuracySource" class="tag">Veri bekleniyor</span></div><div class="accuracy-grid"><div><span>Dalga modelinin noktana uzaklığı</span><strong id="modelDistance">—</strong><p id="modelLocation">Model hücresi henüz bilinmiyor.</p></div><div><span>Seçili günde eksiksiz saat</span><strong id="coverageValue">—</strong><p id="coverageDetail">Dalga, periyot, yön, rüzgâr, hamle, görüş ve hava kodu birlikte kontrol edilir.</p></div><div><span>Sayısal tahmin hata aralığı</span><strong>Sağlanmıyor</strong><p>Model, konuma özel bir ± hata aralığı vermiyor. Daha çok ondalık basamak daha yüksek doğruluk değildir.</p></div></div><p id="accuracyNote" class="accuracy-note">Tahmin ile derinlik verisi farklı kaynaklardan gelir; birbirine yapay düzeltme katsayısı uygulanmaz.</p></section>
 
-    <div class="commentary" id="adviceBox">
-      Butona bastığınızda son 48 saatin deniz taban hareketleri, rüzgar sürtünmesi ve Ay katsayısı hesaba katılarak net rota yorumu verilecektir.
-    </div>
-  </div>
-</div>
-
-<script>
-  // Ay Fazı ve Çekim Kuvveti Hesabı
-  function getMoonPhaseAndTidalPull(date) {
-    let year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    if (month < 3) { year--; month += 12; }
-    let c = 365.25 * year;
-    let e = 30.6 * month;
-    let jd = c + e + day - 694039.09;
-    jd /= 29.5305882;
-    let phaseFraction = jd - Math.floor(jd);
-
-    let phaseName = "";
-    let pullFactor = 1.0;
-
-    if (phaseFraction < 0.05 || phaseFraction > 0.95) {
-      phaseName = "Yeniay";
-      pullFactor = 1.15; // Yüksek çekim / Spring Tide
-    } else if (phaseFraction < 0.22) {
-      phaseName = "Hilal";
-      pullFactor = 1.02;
-    } else if (phaseFraction < 0.28) {
-      phaseName = "İlk Dördün";
-      pullFactor = 0.90; // Neap tide (küçük gelgit)
-    } else if (phaseFraction < 0.45) {
-      phaseName = "Şişkin Ay";
-      pullFactor = 1.05;
-    } else if (phaseFraction < 0.55) {
-      phaseName = "Dolunay";
-      pullFactor = 1.20; // Maksimum çekim / Güçlü dip akıntısı & çırpıntı
-    } else if (phaseFraction < 0.72) {
-      phaseName = "Şişkin Ay";
-      pullFactor = 1.05;
-    } else if (phaseFraction < 0.78) {
-      phaseName = "Son Dördün";
-      pullFactor = 0.90;
-    } else {
-      phaseName = "Hilal";
-      pullFactor = 1.02;
-    }
-
-    return { phaseName, pullFactor, phaseFraction: Math.round(phaseFraction * 100) };
-  }
-
-  function getWindDirectionCardinal(deg) {
-    const directions = ['K (Kuzey)', 'KKD', 'KD', 'DKD', 'D (Doğu)', 'GGD', 'GD', 'GGD', 'G (Güney)', 'GGB', 'GB', 'BGB', 'B (Batı)', 'BKB', 'KB', 'KKB'];
-    return directions[Math.round(deg / 22.5) % 16];
-  }
-
-  async function fetchSeaForecast() {
-    const lat = parseFloat(document.getElementById('lat').value);
-    const lon = parseFloat(document.getElementById('lon').value);
-    const thGood = parseFloat(document.getElementById('thGood').value);
-    const thMid = parseFloat(document.getElementById('thMid').value);
-
-    const btn = document.getElementById('btn');
-    const loader = document.getElementById('loader');
-    const errorBox = document.getElementById('error');
-
-    errorBox.style.display = 'none';
-    loader.style.display = 'block';
-    btn.disabled = true;
-
-    try {
-      // 1. Marine API (Dalga, Swell ve Periyot - 2 gün geçmiş + 2 gün tahmin)
-      const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,swell_wave_height&past_days=2&forecast_days=2&timezone=auto`;
-      
-      // 2. Weather API (Rüzgar Hızı ve Yönü)
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&past_days=2&forecast_days=2&timezone=auto`;
-
-      const [marineRes, weatherRes] = await Promise.all([
-        fetch(marineUrl).then(r => r.json()),
-        fetch(weatherUrl).then(r => r.json())
-      ]);
-
-      if (!marineRes.hourly || !weatherRes.hourly) {
-        throw new Error("Hava/Deniz servisinden veri alınamadı. Koordinatların açık denizde olduğundan emin olun.");
-      }
-
-      // Yarının tarihini belirle
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-      // Dünün tarihini belirle (Geçmiş analiz için)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-      // Gündüz saatlerini filtrele (Tekne seyrinin yapıldığı 08:00 - 18:00 arası)
-      const marineTimes = marineRes.hourly.time;
-      const tomorrowDayIndices = [];
-      const yesterdayDayIndices = [];
-
-      marineTimes.forEach((time, index) => {
-        if (time.startsWith(tomorrowStr)) {
-          const hour = parseInt(time.split('T')[1].split(':')[0], 10);
-          if (hour >= 8 && hour <= 18) tomorrowDayIndices.push(index);
-        } else if (time.startsWith(yesterdayStr)) {
-          const hour = parseInt(time.split('T')[1].split(':')[0], 10);
-          if (hour >= 8 && hour <= 18) yesterdayDayIndices.push(index);
-        }
-      });
-
-      // Yarınki ham dalgalar (metre -> cm)
-      const tomorrowWaves = tomorrowDayIndices.map(i => (marineRes.hourly.wave_height[i] || 0) * 100);
-      const tomorrowSwells = tomorrowDayIndices.map(i => (marineRes.hourly.swell_wave_height[i] || 0) * 100);
-      const tomorrowPeriods = tomorrowDayIndices.map(i => marineRes.hourly.wave_period[i] || 0);
-
-      // Dünkü dalgalar (geçmiş eğilim kontrolü)
-      const yesterdayWaves = yesterdayDayIndices.map(i => (marineRes.hourly.wave_height[i] || 0) * 100);
-      const pastAvg = yesterdayWaves.length ? yesterdayWaves.reduce((a, b) => a + b, 0) / yesterdayWaves.length : 50;
-
-      // Rüzgar verileri (Yarın)
-      const tomorrowWinds = tomorrowDayIndices.map(i => weatherRes.hourly.wind_speed_10m[i] || 0);
-      const tomorrowWindDirs = tomorrowDayIndices.map(i => weatherRes.hourly.wind_direction_10m[i] || 0);
-
-      const avgWind = Math.round(tomorrowWinds.reduce((a, b) => a + b, 0) / tomorrowWinds.length);
-      const avgWindDir = Math.round(tomorrowWindDirs.reduce((a, b) => a + b, 0) / tomorrowWindDirs.length);
-      const avgPeriod = (tomorrowPeriods.reduce((a, b) => a + b, 0) / tomorrowPeriods.length).toFixed(1);
-
-      // Ay Katsayısı
-      const moon = getMoonPhaseAndTidalPull(tomorrow);
-
-      // Dalgayı Daraltılmış ve Hesaplanmış Modele Oturtma:
-      // Ham dalgaya; Ay katsayısı ve geçmiş rüzgardan kalan ölü dalga (soluğan) düzeltmesi uygulanır
-      const correctedWaves = tomorrowWaves.map((w, idx) => {
-        let val = w * (0.85 + (moon.pullFactor * 0.15));
-        // Dünden gelen soluğan (swell) etkisi
-        if (pastAvg > 80 && tomorrowSwells[idx] > 30) {
-          val += 8; // Deniz oturduğu için çırpıntı eklenir
-        }
-        return val;
-      });
-
-      const avgCm = Math.round(correctedWaves.reduce((a, b) => a + b, 0) / correctedWaves.length);
-      const minCm = Math.round(Math.min(...correctedWaves));
-      const maxCm = Math.round(Math.max(...correctedWaves));
-
-      // Geçmiş trendi belirleme
-      let trendText = "Stabil";
-      if (avgCm > pastAvg + 15) trendText = "Yükseliyor ↗";
-      else if (avgCm < pastAvg - 15) trendText = "Yatışıyor ↘";
-
-      // Ekranı güncelle
-      document.getElementById('reportDate').textContent = `Yarın (${tomorrowStr}) 08:00 - 18:00 Arası`;
-      document.getElementById('waveHeight').textContent = `${avgCm} cm`;
-      document.getElementById('waveRange').textContent = `Daraltılmış Tahmin Aralığı: ${minCm} - ${maxCm} cm`;
-      document.getElementById('windInfo').textContent = `${avgWind} knot / ${getWindDirectionCardinal(avgWindDir)}`;
-      document.getElementById('moonInfo').textContent = `${moon.phaseName} (Etki: x${moon.pullFactor})`;
-      document.getElementById('historyTrend').textContent = `${trendText} (Dün: ${Math.round(pastAvg)} cm)`;
-      document.getElementById('wavePeriod').textContent = `${avgPeriod} sn`;
-
-      // Durum değerlendirme
-      const dot = document.getElementById('statusDot');
-      const pillText = document.getElementById('statusText');
-      const adviceBox = document.getElementById('adviceBox');
-
-      if (avgCm <= thGood) {
-        dot.style.background = "var(--good)";
-        pillText.textContent = "DÜZ / ÇARŞAF (Seyre Uygun)";
-        pillText.style.color = "var(--good)";
-        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Deniz oldukça sakin ve düz görünüyor (${minCm}-${maxCm} cm). Karaburun Gülkent'ten Çeşme yönüne küçük ve orta boy teknelerle çıkış için son derece elverişli.`;
-      } else if (avgCm <= thMid) {
-        dot.style.background = "var(--mid)";
-        pillText.textContent = "ORTA ÇIRPINTILI (Dikkat)";
-        pillText.style.color = "var(--mid)";
-        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Denizde ${minCm}-${maxCm} cm bandında orta çırpıntı bekleniyor. Rüzgar (${avgWind} knot) ve Ayın (${moon.phaseName}) etkisiyle özellikle Karaburun Burun ucu ve boğaz geçişinde serpinti artabilir. Küçük teknelerin tedbirli olması önerilir.`;
-      } else {
-        dot.style.background = "var(--bad)";
-        pillText.textContent = "DALGALI / TEHLİKELİ";
-        pillText.style.color = "var(--bad)";
-        adviceBox.innerHTML = `<strong>Seyir Tavsiyesi:</strong> Dalga boyu ortalama ${avgCm} cm seviyelerinde ve yer yer ${maxCm} cm üzerine çıkabilir. Rüzgar ve geçmişten gelen soluğan dalgalar Çeşme rotasında seyri çok konforsuz ve riskli hale getirecektir. Çıkış ertelenmeli.`;
-      }
-
-    } catch (err) {
-      errorBox.style.display = 'block';
-      errorBox.textContent = "Hata oluştu: " + err.message;
-    } finally {
-      loader.style.display = 'none';
-      btn.disabled = false;
-    }
-  }
-
-  // Sayfa açıldığında otomatik hesaplasın
-  window.addEventListener('DOMContentLoaded', fetchSeaForecast);
-</script>
+    <section class="planning-section" id="planla"><div class="section-heading"><div><p class="eyebrow">İYİ BİR GÜN, İYİ BİR PLAN</p><h2>Rotanı düşün, hazırlığını tamamla.</h2></div><span class="section-aside">Küçük araçlar. Daha iyi hazırlık.</span></div><div class="planning-grid">
+      <article class="panel route-card"><div class="panel-header"><h3><svg><use href="#i-boat"/></svg>Seyir hesaplayıcısı</h3><span class="tag">Yaklaşık hesap</span></div><p>Seçili tahmin noktasından varış noktasına kuş uçuşu mesafe.</p><form id="routeForm"><div class="form-grid"><label class="full">Varış noktası<select id="routeDestination"><option value="cesme">Çeşme açıkları</option><option value="gulkent">Gülkent açıkları</option><option value="alacati">Alaçatı açıkları</option><option value="foca">Foça açıkları</option><option value="bodrum">Bodrum açıkları</option><option value="custom">Özel koordinat</option></select></label><label id="destLatLabel" hidden>Varış enlemi<input id="destLat" type="number" step="any" min="-90" max="90" value="38.32"></label><label id="destLonLabel" hidden>Varış boylamı<input id="destLon" type="number" step="any" min="-180" max="180" value="26.28"></label><label>Seyir hızı <span>(knot)</span><input id="boatSpeed" type="number" min="0.1" max="100" step="0.1" value="12" required></label><label>Tüketim <span>(litre / saat)</span><input id="fuelRate" type="number" min="0" max="1000" step="0.1" value="8" required></label></div><button class="button button-outline" type="submit">Mesafeyi ve süreyi hesapla</button></form><div class="route-results" id="routeResults" aria-live="polite"><div><span>Mesafe</span><strong>— <small>deniz mili</small></strong></div><div><span>Tek yön süre</span><strong>—</strong></div><div><span>Yakıt · tek yön + %30</span><strong>— <small>litre</small></strong></div></div><p class="fine-print">Doğrusal mesafe karadan geçebilir; seyredilebilir rota değildir. Süre ve yakıt hesabına akıntı, dalga ve manevralar dahil değildir. Dönüş yolunu ayrıca hesapla.</p></article>
+      <article class="panel checklist-card"><div class="panel-header"><h3><svg><use href="#i-check"/></svg>Çıkış öncesi kontrol</h3><span class="check-count" id="checkCount">0 / 6</span></div><p>Denizi düşünürken küçük ayrıntıları unutma.</p><div class="checklist" id="checklist"><label><input type="checkbox" data-check="weather"><span>Güncel deniz tahminini ve uyarıları kontrol ettim</span></label><label><input type="checkbox" data-check="vest"><span>Herkes için uygun can yeleği hazır</span></label><label><input type="checkbox" data-check="fuel"><span>Yakıt, dönüş payı ve yedek ihtiyacı kontrol edildi</span></label><label><input type="checkbox" data-check="comms"><span>Telefon / telsiz ve şarjları hazır</span></label><label><input type="checkbox" data-check="route"><span>Rotamı ve dönüş saatimi bir yakınımla paylaştım</span></label><label><input type="checkbox" data-check="water"><span>Su, güneş koruması ve ilk yardım çantası hazır</span></label></div><div class="checklist-bottom"><span>Bu cihazda kaydedilir.</span><button class="text-button" id="resetChecklist">Listeyi sıfırla</button></div></article>
+    </div></section>
+    <section class="guide-section" id="rehber"><div class="section-heading"><div><p class="eyebrow">DENİZİ BİRAZ DAHA TANI</p><h2>Rakamların arkasındaki deniz.</h2></div><svg class="guide-wave"><use href="#i-wave"/></svg></div><div class="guide-grid"><details><summary>“50 cm dalga” tam olarak ne demek?</summary><p>Buradaki değer belirgin dalga yüksekliğidir: dalga grubundaki en yüksek üçte birlik bölümün ortalamasını ifade eder. Tek tek dalgalar bu değerden yüksek olabilir. Gün içi aralık ise saatlik tahminlerin en düşük ve en yüksek değeridir; olasılık veya güven aralığı değildir.</p></details><details><summary>Periyot neden yükseklik kadar önemli?</summary><p>Periyot, art arda gelen dalgaların arasındaki süredir. Aynı yükseklikte kısa periyot daha sık karşılaşılan dalgalar demektir. Uzun periyotlu soluğan kıyıda kırılırken güçlenebilir. Teknenin boyu, hızı ve dalgayı karşılama açısı da hissedilen hareketi etkiler.</p></details><details><summary>Rüzgâr yönünü nasıl okumalıyım?</summary><p>Yön, rüzgârın geldiği tarafı gösterir. Kuzeyden esen rüzgâr güneye doğru ilerler. Dalga yönü de geldiği yöndür. Hamle, ortalama rüzgârın üzerine çıkan kısa süreli hız artışıdır; özellikle kano ve SUP planlarken ayrıca incelenmelidir.</p></details><details><summary>Bu tahminler nasıl hazırlanıyor?</summary><p>Dalga ve hava verileri Open-Meteo'nun sayısal tahmin modellerinden gelir; canlı şamandıra ölçümü değildir. Dalga yüksekliğine yapay Ay veya “geçmiş dalga” katsayısı uygulanmaz. Kıyının biçimi, sığlıklar ve yerel etkiler modelde tam çözülemeyebilir. Uzak günler için belirsizlik artar.</p></details><details><summary>“Daha sakin saatler” nasıl seçiliyor?</summary><p>Seçili günde, gün doğumu ile gün batımı arasındaki gelecekteki üç tam saat karşılaştırılır. Dalga, rüzgâr ve hamlenin kişisel eşiklere oranından en yüksek olanı kullanılır; üç saat içindeki en kötü oranı en düşük pencere seçilir. Eksik hava verisi, düşük görüş veya gök gürültüsü kodu olan saatler önerilmez. Sonuç bir güvenlik onayı değildir.</p></details><details><summary>Aktivite eşikleri ne anlama geliyor?</summary><p>Tekne, yelken ve kano / SUP profilleri yalnızca karşılaştırma için başlangıç eşikleri sağlar. Kendi deneyimine ve ekipmanına göre ayarlardan değiştirebilirsin. “Düşük”, seçili kişisel eşiklerin altında kalındığını anlatır; denize çıkış kararı veya yüzme uygunluğu belirtmez. Yelken profili performans puanı hesaplamaz.</p></details></div></section>
+    <footer><a class="brand" href="#"><svg><use href="#i-wave"/></svg>dalga<span class="brand-dot">.</span></a><p>Deniz hep aynı kalmaz. Yola çıkmadan bir daha bak.</p><div class="footer-links"><a href="https://open-meteo.com/en/docs/marine-weather-api" target="_blank" rel="noopener noreferrer">Deniz verisi: Open-Meteo</a><a href="https://open-meteo.com/en/docs" target="_blank" rel="noopener noreferrer">Hava verisi: Open-Meteo</a><a href="https://www.mgm.gov.tr/deniz/deniz.aspx" target="_blank" rel="noopener noreferrer">MGM deniz tahminleri</a></div><p class="footer-note">Planlamaya yardımcı model tahminidir. Resmî uyarıları ve yerel koşulları ayrıca kontrol et. Tüm saatler Türkiye saati (UTC+3).</p></footer>
+  </main>
+  <dialog id="settingsDialog" aria-labelledby="settingsHeading"><form id="settingsForm"><div class="dialog-header"><div><p class="eyebrow">SANA GÖRE BİR TAHMİN</p><h2 id="settingsHeading">Konum ve eşikler</h2></div><button type="button" class="icon-button" id="closeSettings" aria-label="Ayarları kapat"><svg><use href="#i-close"/></svg></button></div><p class="dialog-intro">Eşikler kişisel karşılaştırma içindir. Tekne ve deneyim koşullarını sen belirlersin.</p><div class="form-grid"><label class="full">Nokta adı<input id="customName" maxlength="60" value="Özel noktam" required></label><label>Enlem<input id="lat" type="number" step="any" min="-90" max="90" value="38.632" required></label><label>Boylam<input id="lon" type="number" step="any" min="-180" max="180" value="26.518" required></label><label>Dalga eşiği <span>(cm)</span><input id="waveLimit" type="number" min="5" max="1000" step="5" value="45" required></label><label>Rüzgâr eşiği <span>(knot)</span><input id="windLimit" type="number" min="1" max="100" value="12" required></label><label>Hamle eşiği <span>(knot)</span><input id="gustLimit" type="number" min="1" max="150" value="18" required></label><label>Dalga birimi<select id="waveUnit"><option value="cm">Santimetre (cm)</option><option value="m">Metre (m)</option></select></label></div><p class="fine-print">Koordinatları deniz üzerinde seç. Konum, eşikler ve favoriler bu tarayıcıda saklanır.</p><div id="settingsError" class="form-error" role="alert"></div><button type="submit" class="button button-primary">Ayarları uygula</button></form></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

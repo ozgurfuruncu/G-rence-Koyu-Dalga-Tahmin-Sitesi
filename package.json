@@ -1,0 +1,11 @@
+{
+  "name": "dalga-ege-deniz-tahmini",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Ege kıyıları için dalga, rüzgâr ve batimetri arayüzü",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test tests/forecast-core.test.js tests/bathymetry-core.test.js",
+    "build": "node scripts/build-site.cjs"
+  }
+}
