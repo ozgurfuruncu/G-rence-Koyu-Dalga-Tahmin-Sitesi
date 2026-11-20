@@ -2,7 +2,9 @@
 
 Dört arkadaşın yaz aylarındaki tekne gezilerini daha iyi planlama fikrinden doğan Dalga; Gülkent/Karaburun, Çeşme ve Ege kıyıları için dalga, rüzgâr ve deniz tabanı bilgilerini tek ekranda toplar.
 
-**Canlı site:** [grand-crepe-055005.netlify.app](https://grand-crepe-055005.netlify.app/)
+**Canlı site:** [Dalga'yı aç](https://ozgurfuruncu.github.io/G-rence-Koyu-Dalga-Tahmin-Sitesi/)
+
+Site GitHub Pages üzerinden yayınlanır. `main` dalındaki güncellemeler mevcut otomatik yayın sürecini tetikler.
 
 ## Neler var?
 
@@ -71,9 +73,13 @@ node tests/browser-smoke.cjs
 
 Bu kontrol servis yanıtlarını taklit ederek mobil taşma, klavye kullanımı, favoriler, CSV, çevrimdışı tahmin, kısmi veri, derinlik sorgusu/harita hataları, hızlı nokta değişimi ve haritadan tahmine geçişi sınar. Ekran görüntülerini işletim sisteminin geçici klasörüne yazar.
 
-`--live` gerçek servisleri de kontrol eder; `--file` HTTP yerine doğrudan `index.html` açılışını sınar. Test kendi açtığı sayfanın yerel kayıtlarını temizlediği için kişisel tarayıcı profiliniz yerine ayrı bir test profili kullanın.
+`--live` gerçek servisleri de kontrol eder; `--file` HTTP yerine doğrudan `index.html` açılışını sınar. `--url=https://...` ile yayınlanmış bir adres kontrol edilebilir. Test kendi açtığı sayfanın yerel kayıtlarını temizlediği için kişisel tarayıcı profiliniz yerine ayrı bir test profili kullanın.
 
 ## Yayınlama
+
+**GitHub Pages:** Bu deponun mevcut yayını `main` dalının kök klasörünü kullanır. `.nojekyll` dosyası statik dosyaların doğrudan yayınlanmasını sağlar. Güncelleme sonrası GitHub Actions içindeki “pages build and deployment” işleminin başarıyla tamamlandığını ve yukarıdaki canlı adresi kontrol edin.
+
+**İsteğe bağlı Netlify / diğer statik barındırma:** Ayrı bir yayın paketi hazırlamak için:
 
 ```sh
 npm run build

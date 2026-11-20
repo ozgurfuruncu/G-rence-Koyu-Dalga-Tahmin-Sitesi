@@ -110,7 +110,8 @@ async function main() {
   await send('Fetch.enable', { patterns: [{ urlPattern: 'https://*.open-meteo.com/*' }, { urlPattern: 'https://ows.emodnet-bathymetry.eu/*' }, { urlPattern: 'https://tile.openstreetmap.org/*' }] });
   try {
     const init = await send('Page.addScriptToEvaluateOnNewDocument', { source: 'try { localStorage.clear(); } catch {}' });
-    const pageUrl = process.argv.includes('--file') ? pathToFileURL(path.resolve(__dirname, '../index.html')).href : 'http://127.0.0.1:5173';
+    const suppliedUrl = process.argv.find(arg => arg.startsWith('--url='))?.slice(6);
+    const pageUrl = process.argv.includes('--file') ? pathToFileURL(path.resolve(__dirname, '../index.html')).href : suppliedUrl || 'http://127.0.0.1:5173';
     await send('Page.navigate', { url: pageUrl });
     await waitFor(`document.getElementById('forecastContent')?.getAttribute('aria-busy') === 'false'`, 25000);
     await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: init.identifier });
